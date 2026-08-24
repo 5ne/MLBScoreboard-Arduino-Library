@@ -20,11 +20,13 @@ ScoreboardConfig	KEYWORD1
 #######################################
 
 begin	KEYWORD2
-setTeams	KEYWORD2
-setFavoriteTeam	KEYWORD2
 tick	KEYWORD2
-fetchTodaysGames	KEYWORD2
+games	KEYWORD2
+teamCount	KEYWORD2
+favoriteTeamIndex	KEYWORD2
+findTodaysGamePk	KEYWORD2
 fetchLinescore	KEYWORD2
+fetchGameForTeam	KEYWORD2
 render	KEYWORD2
 nextPollIntervalMs	KEYWORD2
 sleepUntilNextPoll	KEYWORD2

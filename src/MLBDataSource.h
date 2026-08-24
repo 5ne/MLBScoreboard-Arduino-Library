@@ -2,6 +2,7 @@
 #define MLB_DATA_SOURCE_H
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include "MLBGame.h"
 
 // Talks to the public (unofficial, undocumented) MLB Stats API and turns
@@ -49,7 +50,14 @@ class MLBDataSource
     char _cachedForTeam[4] = "";
     char _cachedForDate[11] = "";
 
-    bool httpGetJson(const String &url, class JsonDocument &doc, class JsonDocument *filter = nullptr);
+    // NOTE: deliberately `JsonDocument`, not a forward-declared
+    // `class JsonDocument` -- ArduinoJson.h does `using namespace
+    // ArduinoJson;` at global scope, so a same-named forward declaration
+    // sitting directly in the global namespace (as this used to be)
+    // makes every unqualified `JsonDocument` in any translation unit
+    // that includes both headers ambiguous. Including <ArduinoJson.h>
+    // above and referring to the real type avoids that.
+    bool httpGetJson(const String &url, JsonDocument &doc, JsonDocument *filter = nullptr);
 };
 
 #endif // MLB_DATA_SOURCE_H

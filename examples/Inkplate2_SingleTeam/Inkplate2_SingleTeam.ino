@@ -5,6 +5,11 @@
   Wakes on a timer, connects WiFi, fetches the score, draws it, then goes
   back to deep sleep -- suitable for battery power.
 
+  MLBScoreboard only fetches data into a structure -- it never touches
+  the display. This sketch owns the Inkplate display and the renderer,
+  and is responsible for calling render() and display.display() itself
+  after each tick().
+
   Board setting in Arduino IDE: "Inkplate 2"
   Required libraries: Inkplate, ArduinoJson (install via Library Manager),
   and this MLBScoreboard library.
@@ -21,11 +26,19 @@ const char *MY_TEAM = "SEA"; // team abbreviation, e.g. SEA, NYY, LAD
 
 Inkplate display; // Inkplate 2 uses the no-arg constructor (3-color mode)
 CompactRenderer renderer;
-MLBScoreboard scoreboard(display, renderer);
+MLBScoreboard scoreboard;
+
+void fetchAndRender()
+{
+    scoreboard.tick(); // fetch -- does not touch the display
+    renderer.render(display, scoreboard.games(), scoreboard.teamCount(), scoreboard.favoriteTeamIndex());
+    display.display();
+}
 
 void setup()
 {
     Serial.begin(115200);
+    display.begin();
 
     ScoreboardConfig config;
     config.wifiSsid = WIFI_SSID;
@@ -36,7 +49,7 @@ void setup()
     config.useDeepSleep = true; // comment out / set false while developing on USB power
 
     scoreboard.begin(config);
-    scoreboard.tick(); // fetch + render immediately on boot/wake
+    fetchAndRender(); // fetch + render immediately on boot/wake
 
     if (config.useDeepSleep)
         scoreboard.sleepUntilNextPoll(); // does not return
@@ -50,7 +63,7 @@ void loop()
     unsigned long interval = scoreboard.nextPollIntervalMs();
     if (millis() - lastTick >= interval)
     {
-        scoreboard.tick();
+        fetchAndRender();
         lastTick = millis();
     }
     delay(1000);

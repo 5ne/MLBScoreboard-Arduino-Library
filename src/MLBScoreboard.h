@@ -1,10 +1,9 @@
 #ifndef MLB_SCOREBOARD_H
 #define MLB_SCOREBOARD_H
 
-#include <Inkplate.h>
+#include <Arduino.h>
 #include "MLBGame.h"
 #include "MLBDataSource.h"
-#include "renderers/ScoreRenderer.h"
 
 // How aggressively to poll statsapi.mlb.com. These are deliberately
 // conservative defaults -- the API has no published rate limit, so this
@@ -32,24 +31,41 @@ struct ScoreboardConfig
     bool useDeepSleep = false;
 };
 
-// Ties MLBDataSource (network) and a ScoreRenderer (drawing) together
-// with a WiFi connect and an adaptive poll/sleep schedule. This is the
-// class most sketches will use directly; reach for MLBDataSource /
-// ScoreRenderer separately only if you need custom orchestration.
+// Fetches and tracks MLB game state for a set of teams on an adaptive
+// poll/sleep schedule. This class's only job is turning "team
+// abbreviations + a poll schedule" into an array of MLBGame structs that
+// the calling application can read via games() -- it does NOT touch a
+// display and has no dependency on Inkplate or any other rendering
+// library. That keeps it usable by anything that wants structured score
+// data (an e-paper renderer, a serial log, an MQTT publisher, a unit
+// test) without dragging in display code it doesn't need.
+//
+// To put scores on an Inkplate board, pair this class with a
+// ScoreRenderer in your sketch: call tick() to refresh games(), then pass
+// games() / teamCount() / favoriteTeamIndex() to a renderer's render(),
+// then flush the display yourself. See examples/.
 class MLBScoreboard
 {
   public:
-    MLBScoreboard(Inkplate &display, ScoreRenderer &renderer);
+    MLBScoreboard() = default;
 
     void begin(const ScoreboardConfig &config);
 
-    // Connects WiFi (if not already connected), fetches the latest state
-    // for every configured team, renders, and flushes to the display.
+    // Connects WiFi (if not already connected) and fetches the latest
+    // state for every configured team into the internal games() array.
     // Returns false if WiFi or every fetch failed -- in that case the
-    // last-known-good games[] are re-rendered with a "stale" indicator
-    // rather than left blank, since e-paper holds whatever was last
-    // drawn otherwise anyway.
+    // last-known-good games() are left in place with isStale set, rather
+    // than cleared, so the caller can still show/report the last good
+    // state instead of nothing at all.
     bool tick();
+
+    // The current tracked game state: one entry per configured team, up
+    // to teamCount() entries are meaningful. Owned by this object and
+    // updated in place by tick() -- copy out anything you need to keep
+    // past the next tick().
+    const MLBGame *games() const { return _games; }
+    int teamCount() const { return _config.teamCount; }
+    int favoriteTeamIndex() const { return _config.favoriteTeamIndex; }
 
     // Computes how long to wait before the next tick(), based on the
     // most "urgent" state across all tracked games (any live game wins,
@@ -61,8 +77,6 @@ class MLBScoreboard
     [[noreturn]] void sleepUntilNextPoll();
 
   private:
-    Inkplate &_display;
-    ScoreRenderer &_renderer;
     MLBDataSource _dataSource;
     ScoreboardConfig _config;
 

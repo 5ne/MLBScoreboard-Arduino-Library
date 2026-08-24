@@ -6,6 +6,11 @@
   with a normal loop(); switch useDeepSleep on in the config if you're
   running this one on battery too.
 
+  MLBScoreboard only fetches data into a structure -- it never touches
+  the display. This sketch owns the Inkplate display and the renderer,
+  and is responsible for calling render() and display.display() itself
+  after each tick().
+
   Board setting in Arduino IDE: match your specific Inkplate model.
   Required libraries: Inkplate, ArduinoJson, and this MLBScoreboard library.
 */
@@ -23,11 +28,19 @@ const char *FAVORITE_TEAM = "SEA";
 
 Inkplate display(INKPLATE_1BIT); // grayscale boards: 1-bit or 3-bit mode
 GridRenderer renderer;           // columns auto-picked from game count
-MLBScoreboard scoreboard(display, renderer);
+MLBScoreboard scoreboard;
+
+void fetchAndRender()
+{
+    scoreboard.tick(); // fetch -- does not touch the display
+    renderer.render(display, scoreboard.games(), scoreboard.teamCount(), scoreboard.favoriteTeamIndex());
+    display.display();
+}
 
 void setup()
 {
     Serial.begin(115200);
+    display.begin();
 
     ScoreboardConfig config;
     config.wifiSsid = WIFI_SSID;
@@ -54,7 +67,7 @@ void loop()
 
     if (lastTick == 0 || millis() - lastTick >= interval)
     {
-        scoreboard.tick();
+        fetchAndRender();
         lastTick = millis();
     }
     delay(1000);

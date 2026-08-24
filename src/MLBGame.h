@@ -1,7 +1,15 @@
 #ifndef MLB_GAME_H
 #define MLB_GAME_H
 
+// Only pulled in when actually building for Arduino -- this struct is
+// plain data (char arrays, ints, a bool or two), so it doesn't need
+// anything Arduino.h provides. Keeping the dependency out lets MLBGame.h
+// (and anything that only needs it, like the parsing/logic unit tests
+// under test/) compile as ordinary host C++ with no Arduino core
+// installed. ARDUINO is defined by the Arduino build system itself.
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 
 // Board-agnostic representation of one game's state. Nothing in this
 // struct knows about pixels, colors, or which Inkplate board it will
@@ -36,8 +44,12 @@ struct MLBGame
     int balls = 0;
     int strikes = 0;
 
-    // Preview detail
-    char startTimeLocal[8] = ""; // "7:10 PM", pre-formatted by caller
+    // Preview detail. 9 bytes is the tight fit for formatLocalTime()'s
+    // longest output, e.g. "11:10 PM" or "12:00 AM" (8 chars + NUL) --
+    // a two-digit hour plus a two-digit minute plus " AM"/" PM". Caught
+    // by test/test_parsing.cpp, which was failing against a 7-char
+    // buffer that silently truncated exactly those times.
+    char startTimeLocal[9] = ""; // "7:10 PM", pre-formatted by caller
 
     bool isValid = false; // false = no game found / fetch failed
     bool isStale = false; // true = this is cached data from a failed refresh, not fresh

@@ -1,0 +1,4 @@
+build/
+# Unpacked on first run of run_tests.sh from vendor/ArduinoJson.tar.gz --
+# not tracked itself, just the tarball is.
+vendor/ArduinoJson/
