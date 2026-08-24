@@ -22,7 +22,25 @@
 // --- Configure me ---
 const char *WIFI_SSID = "YOUR_WIFI_SSID";
 const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char *MY_TEAM = "SF"; // MLB Stats API team abbreviation -- e.g. SEA, NYY, LAD, SF (see README "Team abbreviations")
+// All 30 MLB Stats API team abbreviations (note a few diverge from the
+// ESPN/Baseball-Reference codes you might expect, e.g. SF not SFG, KC
+// not KCR, SD not SDP, TB not TBR, CWS not CHW):
+//   AZ  Arizona Diamondbacks   MIA Miami Marlins
+//   ATL Atlanta Braves         MIL Milwaukee Brewers
+//   ATH Athletics              MIN Minnesota Twins
+//   BAL Baltimore Orioles      NYM New York Mets
+//   BOS Boston Red Sox         NYY New York Yankees
+//   CHC Chicago Cubs           PHI Philadelphia Phillies
+//   CWS Chicago White Sox      PIT Pittsburgh Pirates
+//   CIN Cincinnati Reds        SD  San Diego Padres
+//   CLE Cleveland Guardians    SF  San Francisco Giants
+//   COL Colorado Rockies       SEA Seattle Mariners
+//   DET Detroit Tigers         STL St. Louis Cardinals
+//   HOU Houston Astros         TB  Tampa Bay Rays
+//   KC  Kansas City Royals     TEX Texas Rangers
+//   LAA Los Angeles Angels     TOR Toronto Blue Jays
+//   LAD Los Angeles Dodgers    WSH Washington Nationals
+const char *MY_TEAM = "SF"; // MLB Stats API team abbreviation, from the list above
 
 Inkplate display; // Inkplate 2 uses the no-arg constructor (3-color mode)
 CompactRenderer renderer;
