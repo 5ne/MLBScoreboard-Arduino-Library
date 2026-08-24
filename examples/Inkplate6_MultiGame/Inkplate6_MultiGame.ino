@@ -22,7 +22,10 @@
 const char *WIFI_SSID = "YOUR_WIFI_SSID";
 const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// Track up to ScoreboardConfig::kMaxTeams (8) teams at once.
+// Track up to ScoreboardConfig::kMaxTeams (8) teams at once. These must
+// be the MLB Stats API's own team abbreviations, which aren't always the
+// ESPN/Baseball-Reference codes you'd expect (e.g. "SF" not "SFG",
+// "KC" not "KCR") -- see the README's "Team abbreviations" section.
 const char *WATCHED_TEAMS[] = {"SEA", "NYY", "LAD", "ATL"};
 const char *FAVORITE_TEAM = "SEA";
 

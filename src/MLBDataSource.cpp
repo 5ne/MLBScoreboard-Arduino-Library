@@ -6,7 +6,7 @@
 
 namespace
 {
-const char *kScheduleUrlFmt = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s";
+const char *kScheduleUrlFmt = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s&hydrate=team";
 const char *kLinescoreUrlFmt = "https://statsapi.mlb.com/api/v1/game/%ld/linescore";
 } // namespace
 

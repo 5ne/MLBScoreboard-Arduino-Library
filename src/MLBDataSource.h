@@ -17,6 +17,16 @@
 // see MLBScoreboard's adaptive polling -- and every method fails soft
 // (returns isValid=false) rather than throwing, since the caller is
 // almost always an unattended, battery-powered display.
+//
+// Team abbreviation note: the schedule endpoint only populates
+// teams.home/away.team.abbreviation when the request includes
+// `hydrate=team` (kScheduleUrlFmt in the .cpp does this) -- without it,
+// the team objects only carry id/name/link and every abbreviation lookup
+// silently matches nothing. Also, the Stats API's own abbreviations don't
+// always match the ESPN/Baseball-Reference codes people expect -- e.g.
+// the Giants are "SF" (not "SFG"), the Royals are "KC" (not "KCR"), the
+// Padres are "SD" (not "SDP"), the Rays are "TB" (not "TBR"). See the
+// README's "Team abbreviations" section for the full list.
 class MLBDataSource
 {
   public:
@@ -26,10 +36,11 @@ class MLBDataSource
 
     // Looks up today's schedule (in the given IANA-ish UTC offset, since
     // the ESP32 has no timezone database) and returns the gamePk for the
-    // given team abbreviation (e.g. "SEA"), or 0 if that team has no
-    // game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is used
-    // instead of computing "today" -- useful for testing or for boards
-    // without a reliable RTC/NTP sync.
+    // given team abbreviation (e.g. "SEA" -- must be the Stats API's own
+    // abbreviation, see the class comment above), or 0 if that team has
+    // no game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is
+    // used instead of computing "today" -- useful for testing or for
+    // boards without a reliable RTC/NTP sync.
     long findTodaysGamePk(const char *teamAbbreviation, const char *utcDateOverride = "");
 
     // Fetches the lightweight linescore for a known gamePk and fills in

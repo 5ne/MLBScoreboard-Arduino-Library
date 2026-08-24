@@ -28,10 +28,25 @@ test/                      host-side unit tests for MLBParsing + MLBScoreboardLo
 
 ## Data source
 
-- `GET /api/v1/schedule?sportId=1&date=YYYY-MM-DD` — resolves a team abbreviation (`"SEA"`) to today's `gamePk`, game state (preview/live/final), baseline score, and start time. Cheap; fetched every poll.
+- `GET /api/v1/schedule?sportId=1&date=YYYY-MM-DD&hydrate=team` — resolves a team abbreviation (`"SEA"`) to today's `gamePk`, game state (preview/live/final), baseline score, and start time. Cheap; fetched every poll. The `hydrate=team` parameter is required — without it the API's team objects only carry `id`/`name`/`link`, not `abbreviation`, and every lookup silently matches nothing.
 - `GET /api/v1/game/{gamePk}/linescore` — inning, outs, balls/strikes. Only fetched while a game is actually live, to avoid hammering an API with no published rate limit or SLA.
 
 JSON is parsed with ArduinoJson using a `DeserializationOption::Filter`, so only the handful of fields the library needs are ever materialized in memory — important on an ESP32 with roughly 300KB of usable RAM.
+
+## Team abbreviations
+
+Team abbreviations passed to this library (`teamAbbreviations[]`, `MY_TEAM`, etc.) must match the MLB Stats API's own `abbreviation` field for that team, which for a handful of teams is *not* the more familiar ESPN/Baseball-Reference three-letter code:
+
+| Team | Use this | Not this |
+|---|---|---|
+| Chicago White Sox | `CWS` | ~~CHW~~ |
+| Kansas City Royals | `KC` | ~~KCR~~ |
+| San Diego Padres | `SD` | ~~SDP~~ |
+| San Francisco Giants | `SF` | ~~SFG~~ |
+| Tampa Bay Rays | `TB` | ~~TBR~~ |
+| Washington Nationals | `WSH` | — |
+
+Every other team's Stats API abbreviation matches what you'd expect (`SEA`, `NYY`, `LAD`, `ATL`, `BOS`, etc.) — see [`GET /api/v1/teams?sportId=1`](https://statsapi.mlb.com/api/v1/teams?sportId=1) for the authoritative full list, including the Athletics, whose abbreviation is `ATH`. Using the wrong code doesn't error — it just makes `fetchGameForTeam()`/`findTodaysGamePk()` never find a match, which looks identical to "no game today" even when one exists.
 
 ## Power management
 
