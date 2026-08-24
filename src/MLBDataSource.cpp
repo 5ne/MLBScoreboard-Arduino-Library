@@ -14,6 +14,11 @@ MLBDataSource::MLBDataSource(uint32_t timeoutMs) : _timeoutMs(timeoutMs)
 {
 }
 
+void MLBDataSource::setTimezoneOffsetMinutes(int offsetMinutes)
+{
+    _timezoneOffsetMinutes = offsetMinutes;
+}
+
 bool MLBDataSource::httpGetJson(const String &url, JsonDocument &doc, JsonDocument *filter)
 {
     if (WiFi.status() != WL_CONNECTED)
@@ -148,7 +153,7 @@ bool MLBDataSource::fetchGameForTeam(const char *teamAbbreviation, MLBGame &out)
     if (!httpGetJson(String(urlBuf), doc, &filter))
         return false; // leave `out` untouched -- caller keeps last-known-good state
 
-    if (!MLBParsing::findGameInSchedule(doc, teamAbbreviation, out))
+    if (!MLBParsing::findGameInSchedule(doc, teamAbbreviation, out, _timezoneOffsetMinutes))
         return false; // off day for everyone, bad date, or this team has no game today
 
     out.lastUpdatedMs = millis();

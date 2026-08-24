@@ -30,6 +30,7 @@ echo "Building tests with $CXX..."
     test/test_main.cpp \
     test/test_mlbgame.cpp \
     test/test_parsing.cpp \
+    test/test_responses.cpp \
     test/test_scoreboard_logic.cpp \
     -o "$BIN"
 

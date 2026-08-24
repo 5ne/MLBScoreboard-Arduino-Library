@@ -77,7 +77,7 @@ void fillLinescoreFromJson(JsonDocument &linescoreDoc, MLBGame &out)
         out.awayScore = awayRuns;
 }
 
-bool findGameInSchedule(JsonDocument &scheduleDoc, const char *teamAbbreviation, MLBGame &out)
+bool findGameInSchedule(JsonDocument &scheduleDoc, const char *teamAbbreviation, MLBGame &out, int utcOffsetMinutes)
 {
     JsonArray dates = scheduleDoc["dates"].as<JsonArray>();
     if (dates.isNull() || dates.size() == 0)
@@ -106,7 +106,7 @@ bool findGameInSchedule(JsonDocument &scheduleDoc, const char *teamAbbreviation,
         out.homeScore = game["teams"]["home"]["score"] | 0;
         out.awayScore = game["teams"]["away"]["score"] | 0;
         out.state = parseAbstractState(game["status"]["abstractGameState"] | "");
-        formatLocalTime(game["gameDate"] | "", 0, out.startTimeLocal, sizeof(out.startTimeLocal));
+        formatLocalTime(game["gameDate"] | "", utcOffsetMinutes, out.startTimeLocal, sizeof(out.startTimeLocal));
         out.isValid = true;
         return true;
     }

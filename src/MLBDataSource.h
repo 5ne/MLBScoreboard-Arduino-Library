@@ -34,8 +34,15 @@ class MLBDataSource
     // sensible defaults are fine for normal use.
     explicit MLBDataSource(uint32_t timeoutMs = 8000);
 
-    // Looks up today's schedule (in the given IANA-ish UTC offset, since
-    // the ESP32 has no timezone database) and returns the gamePk for the
+    // Set the timezone offset for game time display (in minutes from UTC).
+    // Examples:
+    //   - Pacific (PDT): -7 * 60 = -420
+    //   - Mountain (MDT): -6 * 60 = -360
+    //   - Central (CDT): -5 * 60 = -300
+    //   - Eastern (EDT): -4 * 60 = -240
+    void setTimezoneOffsetMinutes(int offsetMinutes);
+
+    // Looks up today's schedule and returns the gamePk for the
     // given team abbreviation (e.g. "SEA" -- must be the Stats API's own
     // abbreviation, see the class comment above), or 0 if that team has
     // no game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is
@@ -60,6 +67,7 @@ class MLBDataSource
     long _cachedGamePk = 0;
     char _cachedForTeam[4] = "";
     char _cachedForDate[11] = "";
+    int _timezoneOffsetMinutes = 0;
 
     // NOTE: deliberately `JsonDocument`, not a forward-declared
     // `class JsonDocument` -- ArduinoJson.h does `using namespace

@@ -20,8 +20,8 @@
 #include <renderers/CompactRenderer.h>
 
 // --- Configure me ---
-const char *WIFI_SSID = "YOUR_WIFI_SSID";
-const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char *WIFI_SSID = "WIFI_SSID";
+const char *WIFI_PASSWORD = "WIFI_PASSWORD";
 // All 30 MLB Stats API team abbreviations (note a few diverge from the
 // ESPN/Baseball-Reference codes you might expect, e.g. SF not SFG, KC
 // not KCR, SD not SDP, TB not TBR, CWS not CHW):
@@ -40,7 +40,7 @@ const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 //   KC  Kansas City Royals     TEX Texas Rangers
 //   LAA Los Angeles Angels     TOR Toronto Blue Jays
 //   LAD Los Angeles Dodgers    WSH Washington Nationals
-const char *MY_TEAM = "SF"; // MLB Stats API team abbreviation, from the list above
+const char *MY_TEAM = "TB"; // MLB Stats API team abbreviation, from the list above
 
 Inkplate display; // Inkplate 2 uses the no-arg constructor (3-color mode)
 CompactRenderer renderer;
