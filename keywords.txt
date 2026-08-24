@@ -1,0 +1,39 @@
+#######################################
+# Syntax Coloring Map For MLBScoreboard
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MLBScoreboard	KEYWORD1
+MLBDataSource	KEYWORD1
+MLBGame	KEYWORD1
+GameState	KEYWORD1
+ScoreRenderer	KEYWORD1
+CompactRenderer	KEYWORD1
+GridRenderer	KEYWORD1
+ScoreboardConfig	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+setTeams	KEYWORD2
+setFavoriteTeam	KEYWORD2
+tick	KEYWORD2
+fetchTodaysGames	KEYWORD2
+fetchLinescore	KEYWORD2
+render	KEYWORD2
+nextPollIntervalMs	KEYWORD2
+sleepUntilNextPoll	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+GAME_STATE_PREVIEW	LITERAL1
+GAME_STATE_LIVE	LITERAL1
+GAME_STATE_FINAL	LITERAL1
+GAME_STATE_UNKNOWN	LITERAL1
