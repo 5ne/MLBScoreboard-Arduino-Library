@@ -22,7 +22,7 @@
 // --- Configure me ---
 const char *WIFI_SSID = "YOUR_WIFI_SSID";
 const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char *MY_TEAM = "SEA"; // team abbreviation, e.g. SEA, NYY, LAD
+const char *MY_TEAM = "NYY"; // team abbreviation, e.g. SEA, NYY, LAD
 
 Inkplate display; // Inkplate 2 uses the no-arg constructor (3-color mode)
 CompactRenderer renderer;

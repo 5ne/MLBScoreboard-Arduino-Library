@@ -99,7 +99,7 @@ def main():
             data, _ = pack_1bit(img, args.threshold)
             emit_array(f, f"{args.name}_bits", data)
             f.write(
-                f"\n// Usage: display.drawBitmap(x, y, {args.name}_bits, {args.name}_w, {args.name}_h, INKPLATE_BLACK);\n"
+                f"\n// Usage: display.drawBitmap(x, y, {args.name}_bits, {args.name}_w, {args.name}_h, BLACK);\n"
             )
         else:
             black, red, _ = pack_3color(img, args.threshold, args.red_saturation_min)

@@ -6,10 +6,13 @@
 // Multi-game layout for the larger Inkplate boards (6, 6PLUS, 10, etc).
 // Lays games out in a grid of cards sized off of display.width()/height()
 // at render time, so the same renderer works across every board in that
-// family without per-model tuning. Uses 1-bit grayscale color constants
-// (INKPLATE_BLACK/INKPLATE_WHITE) which are valid on every non-Inkplate2
-// board; boards with true color (6COLOR) will just render in black/white,
-// which is a deliberate simplification for v0.1 -- see README.
+// family without per-model tuning. Uses the plain Adafruit_GFX-style
+// `BLACK`/`WHITE` constants the Inkplate library defines for its
+// grayscale boards (see src/system/defines.h in the Inkplate library --
+// NOT `INKPLATE_BLACK`/`INKPLATE_WHITE`, which only exist for the 7-color
+// 6COLOR/13" Spectra boards and won't compile against a grayscale board
+// selection). Those true-color boards will just render in black/white
+// here, which is a deliberate simplification for v0.1 -- see README.
 class GridRenderer : public ScoreRenderer
 {
   public:

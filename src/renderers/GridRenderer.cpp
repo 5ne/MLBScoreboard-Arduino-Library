@@ -12,7 +12,7 @@ void GridRenderer::render(Inkplate &display, const MLBGame *games, int count, in
     if (count <= 0)
     {
         display.setTextSize(2);
-        display.setTextColor(INKPLATE_BLACK);
+        display.setTextColor(BLACK);
         display.setCursor(20, 20);
         display.print("No games today");
         return;
@@ -44,12 +44,12 @@ void GridRenderer::renderCard(Inkplate &display, const MLBGame &g, int x, int y,
     // Favorite team gets a border so it stands out on a busy grid --
     // this is the one accent available uniformly across grayscale boards.
     if (isFavorite)
-        display.drawRect(x + 1, y + 1, w - 2, h - 2, INKPLATE_BLACK);
+        display.drawRect(x + 1, y + 1, w - 2, h - 2, BLACK);
 
     if (!g.isValid)
     {
         display.setTextSize(1);
-        display.setTextColor(INKPLATE_BLACK);
+        display.setTextColor(BLACK);
         display.setCursor(x + pad, y + pad);
         display.print("No data");
         return;
@@ -58,7 +58,7 @@ void GridRenderer::renderCard(Inkplate &display, const MLBGame &g, int x, int y,
     char matchup[24];
     snprintf(matchup, sizeof(matchup), "%s @ %s", g.awayTeam, g.homeTeam);
     display.setTextSize(1);
-    display.setTextColor(INKPLATE_BLACK);
+    display.setTextColor(BLACK);
     display.setCursor(x + pad, y + pad);
     display.print(matchup);
 
