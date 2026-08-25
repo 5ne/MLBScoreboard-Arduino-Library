@@ -6,7 +6,7 @@ It fetches game data from the public (unofficial, undocumented) MLB Stats API an
 
 ## Status
 
-This is a v0.1 scaffold: real network calls, real JSON parsing, real Inkplate drawing calls, and a working example for the Inkplate 2 and for one larger board. It has **not** been flashed and tested on physical hardware yet — treat it as a solid starting point to build and iterate on, not a finished, field-tested library. Test on your own board before relying on it (see "Known gaps" below).
+This is a v0.1 scaffold, now in active hardware bring-up on a real Inkplate board. WiFi connect, NTP-synced system clock, and the schedule-JSON fetch/parse pipeline have all been exercised against the live MLB Stats API; two real bugs surfaced this way already got fixed (system clock reading as the Unix epoch before NTP sync, and a JSON `IncompleteInput` parse failure from reading straight off the network stream — see "Timezone / system clock" and "Data source" below). On-device rendering across both example boards is still being validated. Test on your own board before relying on it for a real install (see "Known gaps" below).
 
 The core logic (JSON parsing, stale-data/polling rules) has an automated host-side test suite that also compiles the example sketches against the real library sources — see [`test/README.md`](test/README.md) and "Tests" below.
 
@@ -40,7 +40,7 @@ Needs only a C++17 compiler — no Arduino IDE, no board, no network. Runs the u
 
 To debug a specific "why isn't this parsing right" problem against **real, live** MLB data instead of fixtures — with actual breakpoints in VSCode, no board required — see [`test/live_run/README.md`](test/live_run/README.md).
 
-## Timezone
+## Timezone / system clock
 
 The MLB Stats API returns game times in UTC; the library does not know your timezone on its own (the ESP32 has no timezone database). Configure it once, after `begin()`:
 
@@ -49,6 +49,8 @@ scoreboard.setTimezoneOffsetMinutes(-7 * 60); // Pacific Daylight Time (UTC-7)
 ```
 
 Common US offsets: PDT `-420`, MDT `-360`, CDT `-300`, EDT `-240` (subtract 60 more for standard time instead of daylight time). Both example sketches show this at the top of `setup()`.
+
+Separately, the ESP32 boots with its system clock at the Unix epoch and has no battery-backed RTC, so `time()` reads back ~0 until something syncs it over the network — without that, "today" for the schedule lookup resolves to 1969-12-31. `MLBScoreboard::connectWifi()` handles this automatically: right after WiFi connects, it checks whether the clock looks plausible and, if not, syncs it via NTP (blocking up to ~10s). Nothing to configure in your sketch. Deep sleep keeps the ESP32's RTC running, so on a battery install this is normally a one-time cost right after a cold boot, not on every wake. Enable `setDebugLogging(true)` to see `System clock synced via NTP` confirm it happened.
 
 ## Debug logging
 
@@ -59,7 +61,7 @@ Common US offsets: PDT `-420`, MDT `-360`, CDT `-300`, EDT `-240` (subtract 60 m
 - `GET /api/v1/schedule?sportId=1&date=YYYY-MM-DD` — resolves a team abbreviation (`"SEA"`) to today's `gamePk`, game state (preview/live/final), baseline score, and start time. Cheap; fetched every poll.
 - `GET /api/v1/game/{gamePk}/linescore` — inning, outs, balls/strikes. Only fetched while a game is actually live, to avoid hammering an API with no published rate limit or SLA.
 
-JSON is parsed with ArduinoJson using a `DeserializationOption::Filter`, so only the handful of fields the library needs are ever materialized in memory — important on an ESP32 with roughly 300KB of usable RAM.
+JSON is parsed with ArduinoJson using a `DeserializationOption::Filter`, so only the handful of fields the library needs are ever materialized into the resulting `JsonDocument` — important on an ESP32 with roughly 300KB of usable RAM. The response body itself is fully received via `HTTPClient::getString()` before parsing, rather than parsed straight off the live network stream: ArduinoJson's stream reader has no retry/wait built in, and a live HTTPS stream's `available()` can transiently report 0 mid-transfer (TLS delivers data in bursts), which the reader treats as end-of-input and fails with `IncompleteInput` even though the server is still sending. `getString()` has `HTTPClient`'s own correct wait-for-more-data loop instead. The tradeoff: the raw JSON text is briefly held in RAM alongside the `JsonDocument` being built from it, not just the filtered fields.
 
 ## Power management
 
@@ -84,6 +86,18 @@ cp examples/Inkplate2_SingleTeam/arduino_secrets.h.example examples/Inkplate2_Si
 
 Team abbreviation(s) are set directly at the top of the sketch (they're not secret).
 
+## Installing local changes into Arduino IDE
+
+If you're editing this library and want the Arduino IDE to pick up your changes:
+
+```bash
+./tools/package_library.sh
+```
+
+This builds `dist/MLBScoreboard-<version>.zip` (version read from `library.properties`). In Arduino IDE: **Sketch → Include Library → Add .ZIP Library...** and select that file. Re-run the script and re-add the zip after any further change — there's no live reload, and the IDE installs a copy of the zip's contents into `~/Documents/Arduino/libraries/`, not a link back to this repo.
+
+The script only ever packages an explicit list of files (`library.properties`, `keywords.txt`, `README.md`, `src/`, and each example's `.ino` + `arduino_secrets.h.example`) rather than "everything minus some excludes" — real, filled-in `arduino_secrets.h` files are gitignored but still live on disk locally, and an include-list makes it structurally impossible for one to end up in a zip you hand around.
+
 ## Dependencies
 
 Install via Arduino Library Manager:
@@ -96,9 +110,8 @@ Install via Arduino Library Manager:
 
 ## Known gaps / next steps
 
-- Not yet tested on physical hardware — verify pin/board settings, `HTTPClient` TLS behavior against `statsapi.mlb.com`, and actual JSON field names/shapes against a live response before relying on this for a real install.
+- Hardware bring-up is in progress on one physical board (Inkplate 2) — WiFi connect, NTP time sync, and the schedule fetch/parse have been confirmed working there; on-device *rendering* and the Inkplate 6-family/`GridRenderer` path are not yet confirmed on real hardware. Verify pin/board settings and actual JSON field shapes on your own board before relying on this for a real install.
 - `GridRenderer` draws in black/white only; true-color Inkplate boards (6COLOR) would benefit from a color-aware variant.
-- No NTP time sync is wired in — `MLBDataSource` uses `time()`, which needs `configTime()` called somewhere (typically in the sketch's `setup()`) to be accurate; without it, "today's date" for the schedule lookup can be wrong right after boot.
 - Team logo bitmaps aren't drawn by either renderer yet, just generated by the tool.
 - The renderers (`CompactRenderer`/`GridRenderer`) have no automated test coverage — see [`test/README.md`](test/README.md) for why and what the highest-value version would look like once this is on real hardware.
 
