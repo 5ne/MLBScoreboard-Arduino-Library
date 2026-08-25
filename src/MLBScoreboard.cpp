@@ -2,6 +2,19 @@
 #include "MLBScoreboardLogic.h"
 #include <WiFi.h>
 #include <esp_sleep.h>
+#include <ctime>
+
+namespace
+{
+// The ESP32 boots with its clock at the Unix epoch and has no
+// battery-backed RTC, so time(&now) reads back ~0 until NTP has synced
+// -- MLBDataSource then computes "today" as 1969-12-31 or thereabouts
+// (epoch, shifted by a negative timezone offset), and every schedule
+// request 404s. Anything before this (2020-01-01 UTC) means the clock
+// still isn't set. Deep sleep keeps the RTC running, so this is normally
+// a one-time cost right after a cold boot/power-up, not every tick.
+constexpr time_t kPlausibleEpoch = 1577836800;
+} // namespace
 
 MLBScoreboard::MLBScoreboard(Inkplate &display, ScoreRenderer &renderer) : _display(display), _renderer(renderer)
 {
@@ -41,7 +54,35 @@ bool MLBScoreboard::connectWifi()
     while (WiFi.status() != WL_CONNECTED && millis() - start < kConnectTimeoutMs)
         delay(250);
 
-    return WiFi.status() == WL_CONNECTED;
+    if (WiFi.status() != WL_CONNECTED)
+        return false;
+
+    syncTimeIfNeeded();
+    return true;
+}
+
+void MLBScoreboard::syncTimeIfNeeded()
+{
+    time_t now;
+    time(&now);
+    if (now >= kPlausibleEpoch)
+        return; // already synced -- e.g. survived deep sleep
+
+    MLB_DEBUG("System clock not set, syncing via NTP");
+    // gmtOffset/daylightOffset left at 0 (UTC): time(&now) always returns
+    // UTC regardless of these params, and MLBDataSource applies
+    // setTimezoneOffsetMinutes()'s offset itself when it needs "today".
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo, 10000))
+    {
+        MLB_ERROR("NTP time sync failed or timed out");
+    }
+    else
+    {
+        MLB_INFO("System clock synced via NTP");
+    }
 }
 
 bool MLBScoreboard::tick()

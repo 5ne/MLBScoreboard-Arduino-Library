@@ -31,7 +31,6 @@ echo "Building $BIN ..."
 "$CXX" -std=c++17 -g -Wall -Wextra \
     -DARDUINO=10812 \
     -DARDUINOJSON_ENABLE_PROGMEM=0 \
-    -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 \
     -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 \
     -include Arduino.h \
     -I "$STUBS" \

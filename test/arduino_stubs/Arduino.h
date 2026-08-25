@@ -38,6 +38,15 @@ class String
     String(const std::string &s) : _s(s) {}
     const char *c_str() const { return _s.c_str(); }
     size_t length() const { return _s.length(); }
+    // Needed for ArduinoJson's ArduinoStringWriter.hpp, pulled in now
+    // that ARDUINOJSON_ENABLE_ARDUINO_STRING is on (see
+    // check_examples_compile.sh) -- never actually exercised, since this
+    // build-check never calls serializeJson().
+    bool concat(const char *s)
+    {
+        _s += (s ? s : "");
+        return true;
+    }
 
   private:
     std::string _s;
@@ -124,5 +133,26 @@ inline unsigned long &mlbStubFakeMillis()
 
 inline unsigned long millis() { return mlbStubFakeMillis(); }
 inline void delay(unsigned long ms) { mlbStubFakeMillis() += ms; }
+
+// -- Time sync (ESP32 core: esp32-hal-time.h) -------------------------------
+// Real signatures, no-op/trivial bodies -- see the file-level comment
+// above for why a real implementation isn't needed here.
+inline void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1, const char *server2 = nullptr,
+                        const char *server3 = nullptr)
+{
+    (void)gmtOffset_sec;
+    (void)daylightOffset_sec;
+    (void)server1;
+    (void)server2;
+    (void)server3;
+}
+
+inline bool getLocalTime(struct tm *info, uint32_t ms = 5000)
+{
+    (void)ms;
+    time_t now;
+    time(&now);
+    return localtime_r(&now, info) != nullptr;
+}
 
 #endif // MLB_STUB_ARDUINO_H

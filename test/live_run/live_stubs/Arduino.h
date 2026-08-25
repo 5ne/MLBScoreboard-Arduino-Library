@@ -28,6 +28,14 @@ class String
     String(const std::string &s) : _s(s) {}
     const char *c_str() const { return _s.c_str(); }
     size_t length() const { return _s.length(); }
+    // Used for real (not just to satisfy the compiler) -- ArduinoJson's
+    // ArduinoStringWriter.hpp calls this when serializing into a String,
+    // pulled in now that ARDUINOJSON_ENABLE_ARDUINO_STRING is on.
+    bool concat(const char *s)
+    {
+        _s += (s ? s : "");
+        return true;
+    }
 
   private:
     std::string _s;
@@ -110,6 +118,22 @@ inline unsigned long millis()
 inline void delay(unsigned long ms)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+// -- Time sync (ESP32 core: esp32-hal-time.h) -------------------------------
+// MLBScoreboard::syncTimeIfNeeded() calls these to recover from a
+// never-synced clock on real hardware; the desktop already has a
+// correct system clock (and WiFiClass::status() below always reports
+// connected, which is what gates whether that call happens at all), so
+// these are no-ops/pass-through-to-the-real-clock rather than doing an
+// actual NTP round trip.
+inline void configTime(long, int, const char *, const char * = nullptr, const char * = nullptr) {}
+
+inline bool getLocalTime(struct tm *info, uint32_t = 5000)
+{
+    time_t now;
+    time(&now);
+    return localtime_r(&now, info) != nullptr;
 }
 
 #endif // MLB_LIVE_STUB_ARDUINO_H

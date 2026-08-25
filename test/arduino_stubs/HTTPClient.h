@@ -27,6 +27,7 @@ class HTTPClient
     // ever reaching GET() if this binary is run rather than just built.
     int GET() { return -1; }
     Stream &getStream() { return _stream; }
+    String getString() { return String(""); }
     void end() {}
 
   private:

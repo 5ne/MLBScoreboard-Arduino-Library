@@ -78,6 +78,7 @@ class MLBScoreboard
     MLBGame _games[ScoreboardConfig::kMaxTeams];
 
     bool connectWifi();
+    void syncTimeIfNeeded();
 };
 
 #endif // MLB_SCOREBOARD_H

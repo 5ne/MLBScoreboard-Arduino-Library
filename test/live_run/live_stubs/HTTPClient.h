@@ -56,6 +56,8 @@ class HttpBufferStream : public Stream
         return n;
     }
 
+    const std::string &data() const { return _data; }
+
   private:
     std::string _data;
     size_t _pos = 0;
@@ -126,6 +128,8 @@ class HTTPClient
     }
 
     Stream &getStream() { return _stream; }
+
+    String getString() { return String(_stream.data()); }
 
     void end() {}
 

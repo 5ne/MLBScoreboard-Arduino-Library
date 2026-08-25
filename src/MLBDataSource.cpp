@@ -48,8 +48,22 @@ bool MLBDataSource::httpGetJson(const String &url, JsonDocument &doc, JsonDocume
     }
 
     MLB_DEBUG("httpGetJson: Response OK, parsing JSON");
-    DeserializationError err = filter ? deserializeJson(doc, http.getStream(), DeserializationOption::Filter(*filter))
-                                       : deserializeJson(doc, http.getStream());
+    // Deliberately http.getString() + parse-from-String, NOT
+    // deserializeJson(doc, http.getStream(), ...): ArduinoJson's stream
+    // reader has no retry/wait built in, and a live HTTPS stream's
+    // available() can transiently report 0 mid-transfer (TLS delivers
+    // data in bursts) -- ArduinoJson treats that gap as end-of-input and
+    // bails with IncompleteInput, even though the server is still
+    // sending. http.getString() has HTTPClient's own correct
+    // wait-for-more-data loop (and handles chunked transfer-encoding),
+    // so parsing from the fully-received String is reliable. This does
+    // mean the raw JSON text is briefly held in RAM alongside the
+    // filtered JsonDocument being built from it, not just the filtered
+    // fields -- a real tradeoff against the "keep peak RAM low" goal
+    // above, but a hang/false failure on every request is worse.
+    String body = http.getString();
+    DeserializationError err = filter ? deserializeJson(doc, body, DeserializationOption::Filter(*filter))
+                                       : deserializeJson(doc, body);
     http.end();
 
     if (err != DeserializationError::Ok)

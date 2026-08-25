@@ -65,18 +65,19 @@ build_example() {
     # -include Arduino.h mirrors what the real Arduino build does: a
     # sketch's .ino never explicitly includes Arduino.h itself, because
     # the IDE/arduino-cli force-includes it ahead of the sketch source.
-    # ArduinoJson's Arduino-String/Print/PROGMEM *serialization* support
+    # ArduinoJson's Arduino-Print/PROGMEM *serialization* support
     # (Writer<String>, Printable convertToJson, pgm_read_byte, ...) needs
     # a much fuller Arduino core than this stub provides, and our code
-    # never calls serializeJson()/uses PROGMEM -- only deserializeJson()
-    # from an HTTP stream, which only needs ARDUINOJSON_ENABLE_ARDUINO_STREAM
-    # (left at its default of 1). Disabling the unused pieces here doesn't
-    # change anything about how the real code behaves on real hardware,
-    # where the real Arduino core provides all of it regardless.
+    # never calls serializeJson()/uses PROGMEM. ARDUINOJSON_ENABLE_ARDUINO_STRING
+    # stays on (the default) because MLBDataSource::httpGetJson() now
+    # deserializes from an Arduino String (http.getString()) rather than
+    # streaming straight off the socket -- see the comment there for why.
+    # Disabling the still-unused pieces here doesn't change anything
+    # about how the real code behaves on real hardware, where the real
+    # Arduino core provides all of it regardless.
     "$CXX" -std=c++17 -Wall -Wextra \
         -DARDUINO=10812 \
         -DARDUINOJSON_ENABLE_PROGMEM=0 \
-        -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 \
         -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 \
         -include Arduino.h \
         -I "$STUBS" \
