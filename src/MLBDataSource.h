@@ -38,7 +38,9 @@ class MLBDataSource
     // given team abbreviation (e.g. "SEA"), or 0 if that team has no
     // game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is used
     // instead of computing "today" -- useful for testing or for boards
-    // without a reliable RTC/NTP sync.
+    // without a reliable RTC/NTP sync. Caches per team/date, including a
+    // "no game today" result, so repeated same-day polls (even on an off
+    // day) don't re-hit the schedule endpoint.
     long findTodaysGamePk(const char *teamAbbreviation, const char *utcDateOverride = "");
 
     // Fetches the lightweight linescore for a known gamePk and fills in
@@ -48,11 +50,12 @@ class MLBDataSource
     // can keep showing the last good state with a "stale" indicator.
     bool fetchLinescore(long gamePk, MLBGame &out);
 
-    // Convenience: does findTodaysGamePk() + fetchLinescore() in one
-    // call. Caches the resolved gamePk internally so repeated polls
-    // during the same day don't re-hit the schedule endpoint. Uses
-    // setTimezoneOffsetMinutes()'s offset (default UTC) for
-    // out.startTimeLocal.
+    // Convenience: fetches today's schedule directly (not via
+    // findTodaysGamePk(), and not cached -- called fresh every poll so
+    // state transitions like Preview -> Live -> Final are picked up),
+    // then layers on fetchLinescore() while the game is live. Uses
+    // setTimezoneOffsetMinutes()'s offset (default UTC) for both
+    // "today"'s date and out.startTimeLocal.
     bool fetchGameForTeam(const char *teamAbbreviation, MLBGame &out);
 
     // Set timezone offset in minutes from UTC for correct local time display.

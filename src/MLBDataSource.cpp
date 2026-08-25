@@ -9,7 +9,7 @@
 
 namespace
 {
-const char *kScheduleUrlFmt = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s";
+const char *kScheduleUrlFmt = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s&hydrate=team";
 const char *kLinescoreUrlFmt = "https://statsapi.mlb.com/api/v1/game/%ld/linescore";
 } // namespace
 
@@ -74,18 +74,23 @@ long MLBDataSource::findTodaysGamePk(const char *teamAbbreviation, const char *u
     {
         time_t now;
         time(&now);
+        time_t localNow = now + static_cast<time_t>(_timezoneOffsetMinutes) * 60;
         struct tm tmNow;
-        gmtime_r(&now, &tmNow);
+        gmtime_r(&localNow, &tmNow);
         strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d", &tmNow);
     }
 
     MLB_DEBUG("findTodaysGamePk: Looking for %s on %s", teamAbbreviation, dateBuf);
 
     // Serve from cache if we've already resolved this team/date pair.
+    // _cachedGamePk == -1 is a sentinel for "confirmed no game that day",
+    // so an off day doesn't keep re-hitting the schedule endpoint on
+    // every poll -- only 0 (never cached) misses.
     if (_cachedGamePk != 0 && strcmp(_cachedForTeam, teamAbbreviation) == 0 && strcmp(_cachedForDate, dateBuf) == 0)
     {
-        MLB_DEBUG("findTodaysGamePk: Cache hit, gamePk=%ld", _cachedGamePk);
-        return _cachedGamePk;
+        long cached = (_cachedGamePk == -1) ? 0 : _cachedGamePk;
+        MLB_DEBUG("findTodaysGamePk: Cache hit, gamePk=%ld", cached);
+        return cached;
     }
 
     char urlBuf[128];
@@ -110,18 +115,18 @@ long MLBDataSource::findTodaysGamePk(const char *teamAbbreviation, const char *u
     // tested against fixture JSON in test_parsing.cpp/test_responses.cpp)
     // -- not reimplemented here.
     long gamePk = MLBParsing::findGamePkForTeam(doc, teamAbbreviation);
+    _cachedGamePk = (gamePk != 0) ? gamePk : -1;
+    strncpy(_cachedForTeam, teamAbbreviation, sizeof(_cachedForTeam) - 1);
+    _cachedForTeam[sizeof(_cachedForTeam) - 1] = '\0';
+    strncpy(_cachedForDate, dateBuf, sizeof(_cachedForDate) - 1);
+    _cachedForDate[sizeof(_cachedForDate) - 1] = '\0';
     if (gamePk != 0)
     {
-        _cachedGamePk = gamePk;
-        strncpy(_cachedForTeam, teamAbbreviation, sizeof(_cachedForTeam) - 1);
-        _cachedForTeam[sizeof(_cachedForTeam) - 1] = '\0';
-        strncpy(_cachedForDate, dateBuf, sizeof(_cachedForDate) - 1);
-        _cachedForDate[sizeof(_cachedForDate) - 1] = '\0';
         MLB_INFO("findTodaysGamePk: Found game for %s, gamePk=%ld", teamAbbreviation, gamePk);
     }
     else
     {
-        MLB_DEBUG("findTodaysGamePk: %s has no game today", teamAbbreviation);
+        MLB_DEBUG("findTodaysGamePk: %s has no game today, caching that", teamAbbreviation);
     }
     return gamePk;
 }
@@ -174,8 +179,9 @@ bool MLBDataSource::fetchGameForTeam(const char *teamAbbreviation, MLBGame &out)
     char dateBuf[11];
     time_t now;
     time(&now);
+    time_t localNow = now + static_cast<time_t>(_timezoneOffsetMinutes) * 60;
     struct tm tmNow;
-    gmtime_r(&now, &tmNow);
+    gmtime_r(&localNow, &tmNow);
     strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d", &tmNow);
 
     // Re-fetch the schedule (cheap) every call so we pick up state
