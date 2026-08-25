@@ -42,6 +42,7 @@ echo "Building $BIN ..."
     src/MLBParsing.cpp \
     src/MLBScoreboard.cpp \
     src/MLBScoreboardLogic.cpp \
+    src/MLBTeams.cpp \
     src/MLBLogging.cpp \
     src/renderers/CompactRenderer.cpp \
     -o "$BIN"

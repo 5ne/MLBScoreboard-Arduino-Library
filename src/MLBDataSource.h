@@ -70,6 +70,15 @@ class MLBDataSource
     int _timezoneOffsetMinutes = 0;
 
     bool httpGetJson(const String &url, JsonDocument &doc, JsonDocument *filter = nullptr);
+
+    // Builds the schedule request URL for `teamAbbreviation`/`dateBuf`.
+    // When the abbreviation resolves via MLBTeams::lookupTeamId(), the
+    // request is filtered server-side (?teamId=...) so the API returns
+    // just that team's game instead of the whole day's schedule -- a
+    // meaningfully smaller response to hold in RAM while parsing. Falls
+    // back to the unfiltered by-date request for an unrecognized
+    // abbreviation, so lookup failures degrade rather than break.
+    void buildScheduleUrl(const char *teamAbbreviation, const char *dateBuf, char *urlBuf, size_t urlBufSize);
 };
 
 #endif // MLB_DATA_SOURCE_H

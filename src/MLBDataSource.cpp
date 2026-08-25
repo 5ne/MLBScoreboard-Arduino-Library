@@ -1,5 +1,6 @@
 #include "MLBDataSource.h"
 #include "MLBParsing.h"
+#include "MLBTeams.h"
 #include "MLBLogging.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -10,8 +11,25 @@
 namespace
 {
 const char *kScheduleUrlFmt = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s&hydrate=team";
+const char *kScheduleUrlWithTeamFmt =
+    "https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=%d&date=%s&hydrate=team";
 const char *kLinescoreUrlFmt = "https://statsapi.mlb.com/api/v1/game/%ld/linescore";
 } // namespace
+
+void MLBDataSource::buildScheduleUrl(const char *teamAbbreviation, const char *dateBuf, char *urlBuf,
+                                      size_t urlBufSize)
+{
+    int teamId = MLBTeams::lookupTeamId(teamAbbreviation);
+    if (teamId != 0)
+    {
+        snprintf(urlBuf, urlBufSize, kScheduleUrlWithTeamFmt, teamId, dateBuf);
+    }
+    else
+    {
+        MLB_DEBUG("buildScheduleUrl: No known team ID for %s, requesting unfiltered schedule", teamAbbreviation);
+        snprintf(urlBuf, urlBufSize, kScheduleUrlFmt, dateBuf);
+    }
+}
 
 MLBDataSource::MLBDataSource(uint32_t timeoutMs) : _timeoutMs(timeoutMs)
 {
@@ -108,7 +126,7 @@ long MLBDataSource::findTodaysGamePk(const char *teamAbbreviation, const char *u
     }
 
     char urlBuf[128];
-    snprintf(urlBuf, sizeof(urlBuf), kScheduleUrlFmt, dateBuf);
+    buildScheduleUrl(teamAbbreviation, dateBuf, urlBuf, sizeof(urlBuf));
 
     // Filter the schedule payload down to just what we need -- a full
     // day's schedule.dates[].games[] response can be tens of KB, most of
@@ -203,7 +221,7 @@ bool MLBDataSource::fetchGameForTeam(const char *teamAbbreviation, MLBGame &out)
     // time. The heavier linescore endpoint is only hit while the game is
     // actually live, per the class-level comment about API courtesy.
     char urlBuf[128];
-    snprintf(urlBuf, sizeof(urlBuf), kScheduleUrlFmt, dateBuf);
+    buildScheduleUrl(teamAbbreviation, dateBuf, urlBuf, sizeof(urlBuf));
 
     JsonDocument filter;
     filter["dates"][0]["games"][0]["gamePk"] = true;

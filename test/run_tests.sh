@@ -29,11 +29,13 @@ echo "Building unit tests with $CXX..."
     -I src \
     src/MLBParsing.cpp \
     src/MLBScoreboardLogic.cpp \
+    src/MLBTeams.cpp \
     test/test_main.cpp \
     test/test_mlbgame.cpp \
     test/test_parsing.cpp \
     test/test_responses.cpp \
     test/test_scoreboard_logic.cpp \
+    test/test_teams.cpp \
     -o "$BIN"
 
 echo

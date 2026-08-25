@@ -54,7 +54,7 @@ for example_dir in examples/*/; do
 done
 
 # Both renderers, always -- see the block comment above for why.
-COMMON_SRCS="src/MLBDataSource.cpp src/MLBParsing.cpp src/MLBScoreboard.cpp src/MLBScoreboardLogic.cpp src/MLBLogging.cpp src/renderers/CompactRenderer.cpp src/renderers/GridRenderer.cpp"
+COMMON_SRCS="src/MLBDataSource.cpp src/MLBParsing.cpp src/MLBScoreboard.cpp src/MLBScoreboardLogic.cpp src/MLBTeams.cpp src/MLBLogging.cpp src/renderers/CompactRenderer.cpp src/renderers/GridRenderer.cpp"
 
 build_example() {
     local name="$1"
