@@ -72,7 +72,17 @@ If a fetch fails (WiFi hiccup, API hiccup), the library keeps showing the last k
 - `examples/Inkplate2_SingleTeam` — one favorite team, `CompactRenderer`, deep sleep between polls.
 - `examples/Inkplate6_MultiGame` — several teams in a grid, `GridRenderer`, USB-powered loop.
 
-Both need your WiFi credentials and team abbreviation(s) filled in at the top of the sketch.
+Both need your WiFi credentials and team abbreviation(s) filled in.
+
+WiFi credentials go in `arduino_secrets.h`, not the sketch itself, so they never end up in git history. In each example folder, copy `arduino_secrets.h.example` to `arduino_secrets.h` (same folder) and fill in your real SSID/password there:
+
+```bash
+cp examples/Inkplate2_SingleTeam/arduino_secrets.h.example examples/Inkplate2_SingleTeam/arduino_secrets.h
+```
+
+`arduino_secrets.h` is gitignored. This is the same pattern the Arduino IDE's own examples use, and it works there unmodified: extra files placed alongside a sketch's `.ino` are compiled with it, and `#include "arduino_secrets.h"` resolves to that folder.
+
+Team abbreviation(s) are set directly at the top of the sketch (they're not secret).
 
 ## Dependencies
 

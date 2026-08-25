@@ -43,6 +43,16 @@ if [ ! -f "test/vendor/ArduinoJson/ArduinoJson.h" ]; then
     tar xzf test/vendor/ArduinoJson.tar.gz -C test/vendor
 fi
 
+# arduino_secrets.h is gitignored (real credentials, per-developer), so a
+# fresh clone won't have it -- seed it from the checked-in .example
+# template so the compile check works out of the box. Placeholder values
+# are fine here; this only needs to compile, not connect to WiFi.
+for example_dir in examples/*/; do
+    if [ -f "$example_dir/arduino_secrets.h.example" ] && [ ! -f "$example_dir/arduino_secrets.h" ]; then
+        cp "$example_dir/arduino_secrets.h.example" "$example_dir/arduino_secrets.h"
+    fi
+done
+
 # Both renderers, always -- see the block comment above for why.
 COMMON_SRCS="src/MLBDataSource.cpp src/MLBParsing.cpp src/MLBScoreboard.cpp src/MLBScoreboardLogic.cpp src/MLBLogging.cpp src/renderers/CompactRenderer.cpp src/renderers/GridRenderer.cpp"
 

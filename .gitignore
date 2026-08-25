@@ -9,3 +9,9 @@ build/
 *.o
 .DS_Store
 test/build/
+
+# Real WiFi credentials -- see examples/*/arduino_secrets.h.example
+examples/**/arduino_secrets.h
+
+# tools/package_library.sh output
+dist/

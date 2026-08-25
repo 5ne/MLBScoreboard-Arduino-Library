@@ -14,8 +14,14 @@
 #include <MLBScoreboard.h>
 #include <renderers/GridRenderer.h>
 
-const char *WIFI_SSID = "YOUR_WIFI_SSID";
-const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// WiFi credentials live in arduino_secrets.h (gitignored) rather than
+// here, so they never end up in source control. Copy
+// arduino_secrets.h.example to arduino_secrets.h in this same folder
+// and fill in your real SSID/password.
+#include "arduino_secrets.h"
+
+const char *WIFI_SSID = SECRET_WIFI_SSID;
+const char *WIFI_PASSWORD = SECRET_WIFI_PASSWORD;
 
 // Track up to ScoreboardConfig::kMaxTeams (8) teams at once.
 const char *WATCHED_TEAMS[] = {"SEA", "NYY", "LAD", "ATL"};
