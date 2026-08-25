@@ -5,11 +5,6 @@
   Wakes on a timer, connects WiFi, fetches the score, draws it, then goes
   back to deep sleep -- suitable for battery power.
 
-  MLBScoreboard only fetches data into a structure -- it never touches
-  the display. This sketch owns the Inkplate display and the renderer,
-  and is responsible for calling render() and display.display() itself
-  after each tick().
-
   Board setting in Arduino IDE: "Inkplate 2"
   Required libraries: Inkplate, ArduinoJson (install via Library Manager),
   and this MLBScoreboard library.
@@ -20,43 +15,22 @@
 #include <renderers/CompactRenderer.h>
 
 // --- Configure me ---
-const char *WIFI_SSID = "WIFI_SSID";
-const char *WIFI_PASSWORD = "WIFI_PASSWORD";
-// All 30 MLB Stats API team abbreviations (note a few diverge from the
-// ESPN/Baseball-Reference codes you might expect, e.g. SF not SFG, KC
-// not KCR, SD not SDP, TB not TBR, CWS not CHW):
-//   AZ  Arizona Diamondbacks   MIA Miami Marlins
-//   ATL Atlanta Braves         MIL Milwaukee Brewers
-//   ATH Athletics              MIN Minnesota Twins
-//   BAL Baltimore Orioles      NYM New York Mets
-//   BOS Boston Red Sox         NYY New York Yankees
-//   CHC Chicago Cubs           PHI Philadelphia Phillies
-//   CWS Chicago White Sox      PIT Pittsburgh Pirates
-//   CIN Cincinnati Reds        SD  San Diego Padres
-//   CLE Cleveland Guardians    SF  San Francisco Giants
-//   COL Colorado Rockies       SEA Seattle Mariners
-//   DET Detroit Tigers         STL St. Louis Cardinals
-//   HOU Houston Astros         TB  Tampa Bay Rays
-//   KC  Kansas City Royals     TEX Texas Rangers
-//   LAA Los Angeles Angels     TOR Toronto Blue Jays
-//   LAD Los Angeles Dodgers    WSH Washington Nationals
-const char *MY_TEAM = "TB"; // MLB Stats API team abbreviation, from the list above
+const char *WIFI_SSID = "YOUR_WIFI_SSID";
+const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char *MY_TEAM = "SF"; // team abbreviation, e.g. SEA, NYY, LAD
+
+// Timezone offset from UTC in minutes. Set this to match your local time zone.
+// Examples: PDT = -420 (UTC-7), MDT = -360 (UTC-6), CDT = -300 (UTC-5), EDT = -240 (UTC-4)
+// See: https://en.wikipedia.org/wiki/Time_zone#List_of_UTC_offsets
+const int TIMEZONE_OFFSET_MINUTES = -420; // Pacific Daylight Time (UTC-7)
 
 Inkplate display; // Inkplate 2 uses the no-arg constructor (3-color mode)
 CompactRenderer renderer;
-MLBScoreboard scoreboard;
-
-void fetchAndRender()
-{
-    scoreboard.tick(); // fetch -- does not touch the display
-    renderer.render(display, scoreboard.games(), scoreboard.teamCount(), scoreboard.favoriteTeamIndex());
-    display.display();
-}
+MLBScoreboard scoreboard(display, renderer);
 
 void setup()
 {
     Serial.begin(115200);
-    display.begin();
 
     ScoreboardConfig config;
     config.wifiSsid = WIFI_SSID;
@@ -64,10 +38,15 @@ void setup()
     config.teamAbbreviations[0] = MY_TEAM;
     config.teamCount = 1;
     config.favoriteTeamIndex = 0;
-    config.useDeepSleep = true; // comment out / set false while developing on USB power
+    config.useDeepSleep = false; // comment out / set false while developing on USB power
 
     scoreboard.begin(config);
-    fetchAndRender(); // fetch + render immediately on boot/wake
+    scoreboard.setTimezoneOffsetMinutes(TIMEZONE_OFFSET_MINUTES);
+
+    // Uncomment the next line to enable debug logging in the Serial Monitor.
+    scoreboard.setDebugLogging(true);
+
+    scoreboard.tick(); // fetch + render immediately on boot/wake
 
     if (config.useDeepSleep)
         scoreboard.sleepUntilNextPoll(); // does not return
@@ -81,7 +60,7 @@ void loop()
     unsigned long interval = scoreboard.nextPollIntervalMs();
     if (millis() - lastTick >= interval)
     {
-        fetchAndRender();
+        scoreboard.tick();
         lastTick = millis();
     }
     delay(1000);

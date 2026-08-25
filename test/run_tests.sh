@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Builds and runs the host-side unit tests for MLBScoreboard's testable
-# logic (MLBParsing + MLBScoreboardLogic). Needs nothing but a C++17
+# logic (MLBParsing + MLBScoreboardLogic), then compiles+links both
+# example sketches against the real library sources to catch API
+# mismatches (see check_examples_compile.sh). Needs nothing but a C++17
 # compiler -- no Arduino IDE, no PlatformIO, no ESP32 toolchain, no
 # network access. See test/README.md for what is and isn't covered here.
 set -euo pipefail
@@ -21,7 +23,7 @@ if [ ! -f "test/vendor/ArduinoJson/ArduinoJson.h" ]; then
     tar xzf test/vendor/ArduinoJson.tar.gz -C test/vendor
 fi
 
-echo "Building tests with $CXX..."
+echo "Building unit tests with $CXX..."
 "$CXX" -std=c++17 -Wall -Wextra \
     -I test/vendor/ArduinoJson \
     -I src \
@@ -36,3 +38,9 @@ echo "Building tests with $CXX..."
 
 echo
 "$BIN"
+
+echo
+echo "=================================================================="
+echo "Compiling example sketches against the real library sources..."
+echo "=================================================================="
+"$(dirname "$0")/check_examples_compile.sh"

@@ -100,6 +100,9 @@ def main():
             emit_array(f, f"{args.name}_bits", data)
             f.write(
                 f"\n// Usage: display.drawBitmap(x, y, {args.name}_bits, {args.name}_w, {args.name}_h, BLACK);\n"
+                f"// (BLACK/WHITE come from the Inkplate library itself -- valid on every\n"
+                f"// grayscale board; the Inkplate 2 uses INKPLATE2_BLACK/WHITE/RED instead,\n"
+                f"// see the 3color usage comment below.)\n"
             )
         else:
             black, red, _ = pack_3color(img, args.threshold, args.red_saturation_min)

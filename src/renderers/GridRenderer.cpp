@@ -1,5 +1,7 @@
 #include "GridRenderer.h"
 #include <math.h>
+#include <cstdio>
+#include <cstring>
 
 GridRenderer::GridRenderer(int columns) : _columns(columns)
 {

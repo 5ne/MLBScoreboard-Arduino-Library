@@ -48,13 +48,17 @@ long findGamePkForTeam(JsonDocument &scheduleDoc, const char *teamAbbreviation);
 void fillLinescoreFromJson(JsonDocument &linescoreDoc, MLBGame &out);
 
 // Scans a `GET /schedule` response for `teamAbbreviation` and, if found,
-// fills `out` with that game's teams, score, state, and start time (adjusted
-// for the given UTC offset in minutes), sets out.isValid = true, and returns true.
-// If not found (including an empty or missing schedule), sets out.isValid = false
-// and returns false without touching the rest of `out`.
-// utcOffsetMinutes: timezone offset from UTC in minutes (e.g., -420 for PDT = UTC-7)
-// Does NOT set out.lastUpdatedMs -- see fillLinescoreFromJson.
-bool findGameInSchedule(JsonDocument &scheduleDoc, const char *teamAbbreviation, MLBGame &out, int utcOffsetMinutes = 0);
+// fills `out` with that game's teams, score, state, and start time, sets
+// out.isValid = true, and returns true. If not found (including an empty
+// or missing schedule), sets out.isValid = false and returns false
+// without touching the rest of `out`. Does NOT set out.lastUpdatedMs --
+// see fillLinescoreFromJson.
+//
+// utcOffsetMinutes is forwarded to formatLocalTime() for out.startTimeLocal
+// (see that function's doc comment) -- defaults to 0 (UTC) so existing
+// callers that don't care about local time keep compiling unchanged.
+bool findGameInSchedule(JsonDocument &scheduleDoc, const char *teamAbbreviation, MLBGame &out,
+                         int utcOffsetMinutes = 0);
 
 } // namespace MLBParsing
 

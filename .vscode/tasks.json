@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build live_run",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/test/live_run/build_and_run.sh",
+                "--build-only"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Run unit tests + example compile check",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/test/run_tests.sh"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

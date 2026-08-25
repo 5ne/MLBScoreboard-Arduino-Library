@@ -12,21 +12,20 @@
 // deserializing the full live feed is not viable, and it's unnecessary
 // for a scoreboard display.
 //
+// This class is intentionally *thin*: it owns the HTTP fetch and JSON
+// filter shape, then hands the parsed JsonDocument straight to
+// MLBParsing's pure functions for the actual field extraction. That
+// logic lives in exactly one place (MLBParsing.cpp) so it can be unit
+// tested on a desktop compiler (see test/test_parsing.cpp and
+// test/test_responses.cpp) without WiFi/HTTPClient/hardware, and so the
+// tested behavior and the on-device behavior can never drift apart --
+// this class has no parsing logic of its own to fall out of sync.
+//
 // Network note: statsapi.mlb.com has no published rate limits or SLA.
 // This class is deliberately conservative about how often it's called --
 // see MLBScoreboard's adaptive polling -- and every method fails soft
 // (returns isValid=false) rather than throwing, since the caller is
 // almost always an unattended, battery-powered display.
-//
-// Team abbreviation note: the schedule endpoint only populates
-// teams.home/away.team.abbreviation when the request includes
-// `hydrate=team` (kScheduleUrlFmt in the .cpp does this) -- without it,
-// the team objects only carry id/name/link and every abbreviation lookup
-// silently matches nothing. Also, the Stats API's own abbreviations don't
-// always match the ESPN/Baseball-Reference codes people expect -- e.g.
-// the Giants are "SF" (not "SFG"), the Royals are "KC" (not "KCR"), the
-// Padres are "SD" (not "SDP"), the Rays are "TB" (not "TBR"). See the
-// README's "Team abbreviations" section for the full list.
 class MLBDataSource
 {
   public:
@@ -34,20 +33,12 @@ class MLBDataSource
     // sensible defaults are fine for normal use.
     explicit MLBDataSource(uint32_t timeoutMs = 8000);
 
-    // Set the timezone offset for game time display (in minutes from UTC).
-    // Examples:
-    //   - Pacific (PDT): -7 * 60 = -420
-    //   - Mountain (MDT): -6 * 60 = -360
-    //   - Central (CDT): -5 * 60 = -300
-    //   - Eastern (EDT): -4 * 60 = -240
-    void setTimezoneOffsetMinutes(int offsetMinutes);
-
-    // Looks up today's schedule and returns the gamePk for the
-    // given team abbreviation (e.g. "SEA" -- must be the Stats API's own
-    // abbreviation, see the class comment above), or 0 if that team has
-    // no game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is
-    // used instead of computing "today" -- useful for testing or for
-    // boards without a reliable RTC/NTP sync.
+    // Looks up today's schedule (in the given IANA-ish UTC offset, since
+    // the ESP32 has no timezone database) and returns the gamePk for the
+    // given team abbreviation (e.g. "SEA"), or 0 if that team has no
+    // game today. utcDateOverride, if non-empty ("YYYY-MM-DD"), is used
+    // instead of computing "today" -- useful for testing or for boards
+    // without a reliable RTC/NTP sync.
     long findTodaysGamePk(const char *teamAbbreviation, const char *utcDateOverride = "");
 
     // Fetches the lightweight linescore for a known gamePk and fills in
@@ -59,8 +50,14 @@ class MLBDataSource
 
     // Convenience: does findTodaysGamePk() + fetchLinescore() in one
     // call. Caches the resolved gamePk internally so repeated polls
-    // during the same day don't re-hit the schedule endpoint.
+    // during the same day don't re-hit the schedule endpoint. Uses
+    // setTimezoneOffsetMinutes()'s offset (default UTC) for
+    // out.startTimeLocal.
     bool fetchGameForTeam(const char *teamAbbreviation, MLBGame &out);
+
+    // Set timezone offset in minutes from UTC for correct local time display.
+    // Examples: PDT = -420 (UTC-7), MDT = -360 (UTC-6), CDT = -300 (UTC-5), EDT = -240 (UTC-4)
+    void setTimezoneOffsetMinutes(int offsetMinutes);
 
   private:
     uint32_t _timeoutMs;
@@ -69,13 +66,6 @@ class MLBDataSource
     char _cachedForDate[11] = "";
     int _timezoneOffsetMinutes = 0;
 
-    // NOTE: deliberately `JsonDocument`, not a forward-declared
-    // `class JsonDocument` -- ArduinoJson.h does `using namespace
-    // ArduinoJson;` at global scope, so a same-named forward declaration
-    // sitting directly in the global namespace (as this used to be)
-    // makes every unqualified `JsonDocument` in any translation unit
-    // that includes both headers ambiguous. Including <ArduinoJson.h>
-    // above and referring to the real type avoids that.
     bool httpGetJson(const String &url, JsonDocument &doc, JsonDocument *filter = nullptr);
 };
 

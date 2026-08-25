@@ -305,3 +305,30 @@ TEST(FindGameInSchedule_PreviewStateParsed)
     EXPECT_TRUE(found);
     EXPECT_EQ(out.state, GAME_STATE_PREVIEW);
 }
+
+TEST(FindGameInSchedule_DefaultOffsetIsUtc)
+{
+    // No utcOffsetMinutes argument -- must default to 0 (UTC) so existing
+    // callers (and MLBDataSource, when no timezone has been configured)
+    // keep working unchanged.
+    JsonDocument doc = parse(kOneGameSchedule); // gameDate: 2026-08-24T23:10:00Z
+    MLBGame out;
+    bool found = MLBParsing::findGameInSchedule(doc, "SEA", out);
+
+    EXPECT_TRUE(found);
+    EXPECT_STREQ(out.startTimeLocal, "11:10 PM");
+}
+
+TEST(FindGameInSchedule_AppliesTimezoneOffset)
+{
+    // Regression test for the "No game today" bug: MLBDataSource must
+    // pass its configured timezone offset all the way through to
+    // out.startTimeLocal via this function -- not just to a duplicate
+    // copy of this logic that used to live in MLBDataSource.cpp.
+    JsonDocument doc = parse(kOneGameSchedule); // gameDate: 2026-08-24T23:10:00Z
+    MLBGame out;
+    bool found = MLBParsing::findGameInSchedule(doc, "SEA", out, -7 * 60); // Pacific Daylight Time
+
+    EXPECT_TRUE(found);
+    EXPECT_STREQ(out.startTimeLocal, "4:10 PM");
+}

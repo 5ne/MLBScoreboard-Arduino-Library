@@ -1,4 +1,5 @@
 #include "CompactRenderer.h"
+#include <cstdio>
 
 namespace
 {
@@ -22,6 +23,11 @@ void drawCenteredText(Inkplate &display, const char *text, int y, int textSize, 
 
 void CompactRenderer::render(Inkplate &display, const MLBGame *games, int count, int favoriteTeamIndex)
 {
+    // The Inkplate 2 only ever shows one game (games[0]), so there's no
+    // "which card is the favorite" distinction to draw -- unlike
+    // GridRenderer, which uses this to outline the favorite team's card.
+    (void)favoriteTeamIndex;
+
     display.clearDisplay();
 
     if (count <= 0 || !games[0].isValid)
@@ -58,7 +64,7 @@ void CompactRenderer::render(Inkplate &display, const MLBGame *games, int count,
 
 void CompactRenderer::renderNoGame(Inkplate &display)
 {
-    drawCenteredText(display, "No game today", 46, 2, INKPLATE2_BLACK);
+    drawCenteredText(display, "No games today!!", 46, 2, INKPLATE2_BLACK);
 }
 
 void CompactRenderer::renderStaleMarker(Inkplate &display)

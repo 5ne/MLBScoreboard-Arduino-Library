@@ -6,11 +6,6 @@
   with a normal loop(); switch useDeepSleep on in the config if you're
   running this one on battery too.
 
-  MLBScoreboard only fetches data into a structure -- it never touches
-  the display. This sketch owns the Inkplate display and the renderer,
-  and is responsible for calling render() and display.display() itself
-  after each tick().
-
   Board setting in Arduino IDE: match your specific Inkplate model.
   Required libraries: Inkplate, ArduinoJson, and this MLBScoreboard library.
 */
@@ -22,44 +17,22 @@
 const char *WIFI_SSID = "YOUR_WIFI_SSID";
 const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// Track up to ScoreboardConfig::kMaxTeams (8) teams at once, using the
-// MLB Stats API's own team abbreviations, from the list below.
-// All 30 MLB Stats API team abbreviations (note a few diverge from the
-// ESPN/Baseball-Reference codes you might expect, e.g. SF not SFG, KC
-// not KCR, SD not SDP, TB not TBR, CWS not CHW):
-//   AZ  Arizona Diamondbacks   MIA Miami Marlins
-//   ATL Atlanta Braves         MIL Milwaukee Brewers
-//   ATH Athletics              MIN Minnesota Twins
-//   BAL Baltimore Orioles      NYM New York Mets
-//   BOS Boston Red Sox         NYY New York Yankees
-//   CHC Chicago Cubs           PHI Philadelphia Phillies
-//   CWS Chicago White Sox      PIT Pittsburgh Pirates
-//   CIN Cincinnati Reds        SD  San Diego Padres
-//   CLE Cleveland Guardians    SF  San Francisco Giants
-//   COL Colorado Rockies       SEA Seattle Mariners
-//   DET Detroit Tigers         STL St. Louis Cardinals
-//   HOU Houston Astros         TB  Tampa Bay Rays
-//   KC  Kansas City Royals     TEX Texas Rangers
-//   LAA Los Angeles Angels     TOR Toronto Blue Jays
-//   LAD Los Angeles Dodgers    WSH Washington Nationals
+// Track up to ScoreboardConfig::kMaxTeams (8) teams at once.
 const char *WATCHED_TEAMS[] = {"SEA", "NYY", "LAD", "ATL"};
 const char *FAVORITE_TEAM = "SEA";
 
+// Timezone offset from UTC in minutes. Set this to match your local time zone.
+// Examples: PDT = -420 (UTC-7), MDT = -360 (UTC-6), CDT = -300 (UTC-5), EDT = -240 (UTC-4)
+// See: https://en.wikipedia.org/wiki/Time_zone#List_of_UTC_offsets
+const int TIMEZONE_OFFSET_MINUTES = -420; // Pacific Daylight Time (UTC-7)
+
 Inkplate display(INKPLATE_1BIT); // grayscale boards: 1-bit or 3-bit mode
 GridRenderer renderer;           // columns auto-picked from game count
-MLBScoreboard scoreboard;
-
-void fetchAndRender()
-{
-    scoreboard.tick(); // fetch -- does not touch the display
-    renderer.render(display, scoreboard.games(), scoreboard.teamCount(), scoreboard.favoriteTeamIndex());
-    display.display();
-}
+MLBScoreboard scoreboard(display, renderer);
 
 void setup()
 {
     Serial.begin(115200);
-    display.begin();
 
     ScoreboardConfig config;
     config.wifiSsid = WIFI_SSID;
@@ -77,6 +50,10 @@ void setup()
     config.useDeepSleep = false;
 
     scoreboard.begin(config);
+    scoreboard.setTimezoneOffsetMinutes(TIMEZONE_OFFSET_MINUTES);
+
+    // Uncomment the next line to enable debug logging in the Serial Monitor.
+    // scoreboard.setDebugLogging(true);
 }
 
 void loop()
@@ -86,7 +63,7 @@ void loop()
 
     if (lastTick == 0 || millis() - lastTick >= interval)
     {
-        fetchAndRender();
+        scoreboard.tick();
         lastTick = millis();
     }
     delay(1000);

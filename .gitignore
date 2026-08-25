@@ -1,5 +1,11 @@
 .pio/
-.vscode/
+# Ignore everything else under .vscode/ (personal settings, etc.) except
+# the debug config this repo ships for test/live_run -- see its README.
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/c_cpp_properties.json
 build/
 *.o
 .DS_Store
+test/build/

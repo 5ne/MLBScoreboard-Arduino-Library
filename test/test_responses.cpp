@@ -153,6 +153,42 @@ TEST(RealResponses_SomeGames_SFAndYankeesDistinctResults) {
     EXPECT_EQ(nyyGamePk, 0L);
 }
 
+TEST(RealResponses_SomeGames_GiantsTimezoneConversionToPacific) {
+    // Regression test for the original bug report: the SF Giants game in
+    // this real captured API response starts at 2026-08-25T01:45:00Z --
+    // with no timezone conversion this rendered as "1:45 AM" (and looked
+    // like a stale/wrong game), instead of 6:45 PM Pacific the evening
+    // before. This drives the exact function MLBDataSource::
+    // fetchGameForTeam() calls, at the exact offset a US Pacific sketch
+    // would configure via setTimezoneOffsetMinutes(-7 * 60), so a
+    // regression here is a regression on real hardware too.
+    std::string json = readFile("test/responses/some_games.json");
+    EXPECT_TRUE(json.length() > 0);
+
+    JsonDocument doc = parse(json.c_str());
+    MLBGame out;
+
+    bool found = MLBParsing::findGameInSchedule(doc, "SF", out, -7 * 60); // Pacific Daylight Time
+    EXPECT_TRUE(found);
+    EXPECT_TRUE(out.isValid);
+    EXPECT_STREQ(out.startTimeLocal, "6:45 PM");
+}
+
+TEST(RealResponses_SomeGames_GiantsDefaultOffsetIsUtc) {
+    // Same fixture, no offset argument -- confirms the UTC baseline this
+    // is offset from, so the two tests together pin down both ends of
+    // the conversion against a real response.
+    std::string json = readFile("test/responses/some_games.json");
+    EXPECT_TRUE(json.length() > 0);
+
+    JsonDocument doc = parse(json.c_str());
+    MLBGame out;
+
+    bool found = MLBParsing::findGameInSchedule(doc, "SF", out);
+    EXPECT_TRUE(found);
+    EXPECT_STREQ(out.startTimeLocal, "1:45 AM");
+}
+
 TEST(RealResponses_SomeGames_MultipleTeamsCanBeLookedUp) {
     std::string json = readFile("test/responses/some_games.json");
     EXPECT_TRUE(json.length() > 0);
@@ -166,73 +202,4 @@ TEST(RealResponses_SomeGames_MultipleTeamsCanBeLookedUp) {
     EXPECT_TRUE(sfGamePk != 0L);
     EXPECT_TRUE(cinGamePk != 0L);
     EXPECT_TRUE(seaGamePk != 0L);
-}
-
-// ---- Renderer Output Test ----
-
-TEST(RenderOutput_GiantsPreviewGame_ShowsGameTime) {
-    std::string json = readFile("test/responses/some_games.json");
-    EXPECT_TRUE(json.length() > 0);
-
-    JsonDocument doc = parse(json.c_str());
-    MLBGame out;
-
-    // Get SF Giants game (which is a Preview game at 2026-08-25T01:45:00Z)
-    bool found = MLBParsing::findGameInSchedule(doc, "SF", out);
-    EXPECT_TRUE(found);
-
-    // Print what the renderer would display
-    printf("\n=== SF Giants Game Details ===\n");
-    printf("isValid: %d\n", out.isValid);
-    printf("gamePk: %ld\n", out.gamePk);
-    printf("homeTeam: %s\n", out.homeTeam);
-    printf("awayTeam: %s\n", out.awayTeam);
-    printf("homeTeamName: %s\n", out.homeTeamName);
-    printf("awayTeamName: %s\n", out.awayTeamName);
-    printf("state: %d (PREVIEW=%d, LIVE=%d, FINAL=%d, UNKNOWN=%d)\n", 
-           out.state, GAME_STATE_PREVIEW, GAME_STATE_LIVE, GAME_STATE_FINAL, GAME_STATE_UNKNOWN);
-    printf("startTimeLocal: '%s'\n", out.startTimeLocal);
-    printf("homeScore: %d\n", out.homeScore);
-    printf("awayScore: %d\n", out.awayScore);
-    printf("inning: %d\n", out.inning);
-    printf("inningTopHalf: %d\n", out.inningTopHalf);
-    printf("isStale: %d\n", out.isStale);
-    printf("=============================\n\n");
-
-    // Verify the critical fields
-    EXPECT_TRUE(out.isValid);
-    EXPECT_EQ(out.state, GAME_STATE_PREVIEW);
-    EXPECT_STREQ(out.homeTeam, "SF");
-    EXPECT_STREQ(out.awayTeam, "CIN");
-    EXPECT_FALSE(strcmp(out.startTimeLocal, "No game today") == 0);
-    EXPECT_TRUE(strlen(out.startTimeLocal) > 0);
-}
-
-TEST(RenderOutput_GiantsWithPacificTimeZone) {
-    std::string json = readFile("test/responses/some_games.json");
-    EXPECT_TRUE(json.length() > 0);
-
-    JsonDocument doc = parse(json.c_str());
-    MLBGame out;
-
-    // Get SF Giants game with Pacific Time offset (-7 hours = -420 minutes)
-    int pacificOffsetMinutes = -7 * 60;  // PDT is UTC-7
-    bool found = MLBParsing::findGameInSchedule(doc, "SF", out, pacificOffsetMinutes);
-    EXPECT_TRUE(found);
-
-    printf("\n=== SF Giants Game with Pacific Time (UTC-7) ===\n");
-    printf("Game Time UTC: 2026-08-25T01:45:00Z\n");
-    printf("Local Time (Pacific): %s (should be 6:45 PM on 2026-08-24)\n", out.startTimeLocal);
-    printf("isValid: %d\n", out.isValid);
-    printf("gamePk: %ld\n", out.gamePk);
-    printf("homeTeam: %s\n", out.homeTeam);
-    printf("awayTeam: %s\n", out.awayTeam);
-    printf("state: %d (PREVIEW=%d)\n", out.state, GAME_STATE_PREVIEW);
-    printf("===============================================\n\n");
-
-    // Verify it's correct
-    EXPECT_TRUE(out.isValid);
-    EXPECT_STREQ(out.homeTeam, "SF");
-    EXPECT_STREQ(out.awayTeam, "CIN");
-    EXPECT_STREQ(out.startTimeLocal, "6:45 PM");
 }
