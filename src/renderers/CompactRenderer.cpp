@@ -4,7 +4,6 @@
 namespace
 {
 constexpr int kScreenW = 212;
-constexpr int kScreenH = 104;
 
 void drawCenteredText(Inkplate &display, const char *text, int y, int textSize, int color)
 {

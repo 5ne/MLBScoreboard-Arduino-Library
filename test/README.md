@@ -29,9 +29,9 @@ see exactly what got parsed.
 This library's actual risk isn't "does `for` still work" -- it's "did the
 unofficial MLB API return JSON shaped slightly differently than expected"
 and "does the stale-data/polling logic do the right thing across a poll
-sequence." So the unit tests target exactly the two source files that
-hold that logic, both of which have zero Arduino/network/hardware
-dependency by design:
+sequence." So the unit tests target exactly the source files that hold
+that logic, all of which have zero Arduino/network/hardware dependency
+by design:
 
 - **`src/MLBParsing.cpp`** (`test_parsing.cpp`, `test_responses.cpp`) --
   turns a parsed `JsonDocument` (or a raw ISO-8601 string) into `MLBGame`
@@ -51,6 +51,13 @@ dependency by design:
   it stale, a team that's never had valid data staying invalid (not
   incorrectly flagged stale), and every live/preview/final poll-interval
   precedence combination.
+- **`src/MLBTeams.cpp`** (`test_teams.cpp`) -- the abbreviation -> MLB
+  Stats API numeric team ID lookup `MLBDataSource` uses to ask the
+  schedule endpoint to filter server-side. Covers all 30 current teams
+  resolving to unique, correct IDs (especially the ones that diverge
+  from ESPN/Baseball-Reference codes, e.g. SF/KC/SD/TB/CWS/AZ -- the
+  most likely to get "corrected" back to the wrong code by mistake), plus
+  unknown/empty/null/lowercase abbreviations all correctly missing.
 - **`test_mlbgame.cpp`** -- sanity-checks `MLBGame`'s default field
   values, since several of the above tests depend on them.
 
@@ -216,9 +223,14 @@ real `src/*.cpp` files and the example `.ino` sketches to compile and
 check, not a hardware or network simulator: the resulting binaries are
 never executed. See the comment at the top of
 `test/arduino_stubs/Arduino.h` for the full rationale, including why a
-few ArduinoJson features (PROGMEM, `String`/`Print` serialization
-support) are disabled for this build rather than stubbed out -- our code
-doesn't use them either way.
+couple of ArduinoJson features (PROGMEM, `Print` serialization support)
+are disabled for this build rather than stubbed out -- our code doesn't
+use them either way. `ARDUINOJSON_ENABLE_ARDUINO_STRING` stays on
+(ArduinoJson's default): `MLBDataSource::httpGetJson()` deserializes from
+an Arduino `String` (`http.getString()`), not a raw stream -- see that
+function's own comment for why -- so the stub's `String` needs to
+support what ArduinoJson's Arduino-String path actually calls
+(`concat()`), not just `c_str()`/`length()`.
 
 ## Adding a test
 

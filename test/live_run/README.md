@@ -86,24 +86,28 @@ plain in a terminal), use the **"Build live_run..."** task directly
 ## How the real network call works
 
 `test/live_run/live_stubs/HTTPClient.h`'s `GET()` shells out to `curl`
-(already on your Mac) and reads the response back into an in-memory
-`Stream`, which `MLBDataSource::httpGetJson()` hands to
-`deserializeJson(doc, http.getStream(), ...)` exactly like it would a real
-`WiFiClient`-backed stream on the ESP32. This is why the harness needs
-nothing beyond a C++17 compiler and `curl` -- no libcurl headers, no TLS
-library to link, no mock server.
+(already on your Mac) and reads the full response into an in-memory
+buffer before returning, which `getString()` hands back as a `String` --
+exactly the shape `MLBDataSource::httpGetJson()` parses via
+`deserializeJson(doc, body, ...)` on real hardware too (see that
+function's own comment for why it's a fully-received `String` and not a
+live stream). This is why the harness needs nothing beyond a C++17
+compiler and `curl` -- no libcurl headers, no TLS library to link, no
+mock server.
 
 ## Things that are genuinely different from the ESP32
 
 Worth knowing so you don't chase a phantom:
 
 - **Timezone / "today".** `findTodaysGamePk`/`fetchGameForTeam` compute
-  "today" from `time()` in UTC. Your Mac's system clock is real and
-  correct, same as the ESP32 would be *if* NTP sync succeeded (see the
-  top-level README's "Known gaps" -- the library itself doesn't call
-  `configTime()`). If the device shows "no game today" but this harness
-  finds one, a wrong/unsynced on-device clock is a likely suspect, not a
-  parsing bug.
+  "today" from `time()`, shifted by the configured timezone offset. Your
+  Mac's system clock is always correct; the ESP32's is not until
+  `MLBScoreboard::connectWifi()` syncs it via NTP on first connect (see
+  the top-level README's "Timezone / system clock" section). If the
+  device shows "no game today" but this harness finds one, an unsynced
+  on-device clock (or a WiFi connect that never succeeded, so
+  `syncTimeIfNeeded()` never ran) is a likely suspect, not a parsing bug
+  -- check the Serial log for `System clock synced via NTP`.
 - **No RAM ceiling.** The `DeserializationOption::Filter` still applies
   (same filter shapes as production), but your Mac won't surface an
   ESP32-specific out-of-memory failure the way real hardware might on a

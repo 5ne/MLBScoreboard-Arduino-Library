@@ -9,10 +9,11 @@ namespace
 // The ESP32 boots with its clock at the Unix epoch and has no
 // battery-backed RTC, so time(&now) reads back ~0 until NTP has synced
 // -- MLBDataSource then computes "today" as 1969-12-31 or thereabouts
-// (epoch, shifted by a negative timezone offset), and every schedule
-// request 404s. Anything before this (2020-01-01 UTC) means the clock
-// still isn't set. Deep sleep keeps the RTC running, so this is normally
-// a one-time cost right after a cold boot/power-up, not every tick.
+// (epoch, shifted by a negative timezone offset), and the schedule
+// lookup finds no games for that nonsense date every time. Anything
+// before this (2020-01-01 UTC) means the clock still isn't set. Deep
+// sleep keeps the RTC running, so this is normally a one-time cost right
+// after a cold boot/power-up, not every tick.
 constexpr time_t kPlausibleEpoch = 1577836800;
 } // namespace
 
@@ -23,6 +24,16 @@ MLBScoreboard::MLBScoreboard(Inkplate &display, ScoreRenderer &renderer) : _disp
 void MLBScoreboard::begin(const ScoreboardConfig &config)
 {
     _config = config;
+    if (_config.teamCount > ScoreboardConfig::kMaxTeams)
+    {
+        // teamAbbreviations[] and _games[] are both fixed at kMaxTeams --
+        // an unclamped, too-large teamCount would walk off the end of
+        // both in tick()'s loop. Clamp rather than assert/crash, since
+        // the caller is almost always an unattended board with no one
+        // watching Serial.
+        MLB_ERROR("teamCount %d exceeds kMaxTeams (%d), clamping", _config.teamCount, ScoreboardConfig::kMaxTeams);
+        _config.teamCount = ScoreboardConfig::kMaxTeams;
+    }
     _display.begin();
     MLB_INFO("MLBScoreboard initialized with %d team(s)", _config.teamCount);
 }

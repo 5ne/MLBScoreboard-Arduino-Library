@@ -25,7 +25,7 @@ ZIP_PATH="$DIST_DIR/${LIB_NAME}-${LIB_VERSION}.zip"
 rm -rf "$DIST_DIR/staging" "$ZIP_PATH"
 mkdir -p "$STAGE_DIR"
 
-cp library.properties keywords.txt README.md "$STAGE_DIR/"
+cp library.properties keywords.txt README.md LICENSE "$STAGE_DIR/"
 cp -R src "$STAGE_DIR/src"
 
 mkdir -p "$STAGE_DIR/examples"
