@@ -23,7 +23,7 @@
 // --- Configure me ---
 const char *WIFI_SSID = SECRET_WIFI_SSID;
 const char *WIFI_PASSWORD = SECRET_WIFI_PASSWORD;
-const char *MY_TEAM = "SF"; // team abbreviation, e.g. SEA, NYY, LAD
+const char *MY_TEAM = "NYY"; // team abbreviation, e.g. SEA, NYY, LAD
 
 // Timezone offset from UTC in minutes. Set this to match your local time zone.
 // Examples: PDT = -420 (UTC-7), MDT = -360 (UTC-6), CDT = -300 (UTC-5), EDT = -240 (UTC-4)
